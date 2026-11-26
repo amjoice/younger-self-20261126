@@ -1,29 +1,46 @@
 #!/usr/bin/env python3
-"""One Line to Your Younger Self - the apology, in one line.
+"""One Line to Your Younger Self - the parking-lot apology.
 
-The line is a prophecy only an older self could send back: the apology
-rehearsed for ten years arrives from the wrong person in a parking lot,
-and it still counts. Pure stdlib, deterministic, no network, no secrets;
-writes a single line under 200 characters to /output/entry.txt.
+Only an older self could send this prophecy back: after ten years of
+rehearsing, the apology arrives from the wrong person in a parking
+lot, yet it still counts. Deterministic stdlib only, no network or
+secrets; emits one line under 200 characters to /output/entry.txt.
 """
-import os
+from pathlib import Path
 
-# The line, assembled from its two halves so the wording stays in one place.
-_OPENING = "You will get the apology you rehearsed for ten years, from the wrong person, in a parking lot"
-_CLOSING = "and it will still count."
-_DASH = "\u2014"
+# The message is stored as ordered fragments; assembly happens in one helper
+# so the exact spacing around the dash is controlled in a single place.
+_FRAGMENTS = (
+    "You will get the apology you rehearsed for ten years, from the wrong person, in a parking lot",
+    "\u2014",
+    "and it will still count.",
+)
+_OUTPUT_PATH = Path("/output/entry.txt")
+_MAX_CHARS = 200
+
+
+def _assemble(fragments):
+    """Join fragments with single spaces, preserving their order."""
+    cleaned = [fragment.strip() for fragment in fragments]
+    return " ".join(cleaned)
 
 
 def build_line():
     """Return the full one-line message to a younger self."""
-    return " ".join((_OPENING, _DASH, _CLOSING))
+    line = _assemble(_FRAGMENTS)
+    if len(line) >= _MAX_CHARS:
+        raise ValueError("entry line exceeds the character limit")
+    return line
+
+
+def _write_entry(text, destination):
+    """Write text to destination, creating parent directories first."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
 
 
 def main():
-    line = build_line()
-    os.makedirs("/output", exist_ok=True)
-    with open("/output/entry.txt", "w", encoding="utf-8") as out:
-        out.write(line)
+    _write_entry(build_line(), _OUTPUT_PATH)
 
 
 if __name__ == "__main__":
